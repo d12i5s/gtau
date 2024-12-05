@@ -1,0 +1,146 @@
+<?php
+include('config.php');
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (empty($_POST['gejala'])) {
+        echo "<script>alert('Masukkan gejala terlebih dahulu');</script>";
+        $hasil = '';
+        $solusi = '';
+    } else {
+        $selected_gejala = $_POST['gejala'];
+        $gejala_ids = implode(',', $selected_gejala);
+
+        // Modifikasi query untuk mengambil nama_penyakit dan solusi_penyakit
+        $query = "SELECT p.nama_penyakit, p.solusi_penyakit FROM aturan a
+                  JOIN penyakit p ON a.id_penyakit = p.id
+                  WHERE a.id_gejala IN ($gejala_ids)
+                  GROUP BY p.id, p.nama_penyakit, p.solusi_penyakit
+                  HAVING COUNT(DISTINCT a.id_gejala) = (SELECT COUNT(*) FROM gejala WHERE id IN ($gejala_ids))";
+        $stmt = $pdo->query($query);
+        $penyakit = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($penyakit) {
+            // Variabel untuk nama penyakit dan solusi
+            $hasil = "Kemungkinan penyakit: " . $penyakit['nama_penyakit'];
+            $solusi = "Solusi: " . $penyakit['solusi_penyakit'];
+        } else {
+            $hasil = "Tidak ada penyakit yang terdeteksi dengan gejala tersebut.";
+            $solusi = '';
+        }
+    }
+} else {
+    $hasil = '';
+    $solusi = '';
+}
+
+
+$gejala = $pdo->query("SELECT * FROM gejala")->fetchAll(PDO::FETCH_ASSOC);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css"
+        integrity="sha512-5Hs3dF2AEPkpNAR7UiOHba+lRSJNeM2ECkwxUIxC1Q/FLycGTbNapWXB4tP889k5T5Ju8fs4b1P5z/iB4nMfSQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="bg-[url('./image/bg-hospital2.png')] bg-cover bg-center ">
+
+
+
+    <div
+        class="p-4 m-4 rounded-md justify-self-center backdrop-blur ring ring-indigo-50 sm:p-6 lg:p-8 max-w-max max-h-max">
+        <p class="font-mono text-5xl font-bold text-green-600"><i class="fas fa-diagnoses"></i> Sistem Pakar Diagnosis
+            Penyakit
+            Manusia</p>
+        <!-- Mulai  Form Diagnosa Penyakit -->
+        <div class="flex justify-center mb-10">
+            <div class="max-w-xl p-4 m-4 bg-white rounded-xl ring ring-indigo-50 sm:p-6 lg:p-8">
+                <span class="flex items-center mb-10">
+                    <span class="flex-1 h-px bg-black"></span>
+                    <span class="px-4 font-mono text-xl font-bold ">Silahkan memilih gejala yang dialami</span>
+                    <span class="flex-1 h-px bg-black"></span>
+                </span>
+                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Alias molestias officiis praesentium non
+                adipisci
+                dolor nam officia accusamus. Officia iure architecto sit et in debitis placeat totam eius facilis
+                excepturi
+                reprehenderit omnis non ullam, laborum consectetur quia optio nobis corrupti quibusdam est pariatur! Ea
+                animi nobis non, dolores minus perspiciatis?
+
+                <div class="space-y-2">
+                <form method="POST">
+                <?php foreach ($gejala as $g): ?>
+                    <label
+                        class="flex items-start gap-4 p-4 transition border border-gray-200 rounded-lg cursor-pointer hover:bg-green-100">
+                        <div class="flex items-center">
+                            &#8203;
+                            <input type="checkbox" class="border-gray-300 rounded size-4" name="gejala[]" value="<?= $g['id'] ?>" />
+                        </div>
+
+                        <div>
+                            <strong class="font-medium text-gray-900"><?= $g['nama_gejala'] ?></strong>
+                        </div>
+                    </label>
+
+                    <?php endforeach; ?>
+                    <button type="submit"
+                        class="flex p-4 mt-10 font-bold text-white transition duration-200 ease-in-out bg-green-400 rounded-lg shadow-lg justify-self-center hover:bg-green-500 shadow-green-200 translate-10"
+                        id="btnDiagnosa">
+                        Diagnosa Penyakit
+                    </button>
+
+                    <script>
+                        document.getElementById('btnDiagnosa').addEventListener('click', function () {
+                            document.getElementById('popuphasil').classList.remove('hidden');
+                        });
+
+                        document.getElementById('btnClose').addEventListener('click', function () {
+                            document.getElementById('popuphasil').classList.add('hidden');
+                        });
+                    </script>
+
+                </form>
+                </div>
+            </div>
+
+            <div class="relative hidden max-w-md m-8 bg-green-400 border border-gray-200 rounded-lg shadow-lg max-h-max"
+                id="popuphasil">
+                <button class="absolute p-1 bg-gray-100 border border-gray-300 rounded-full -end-1 -top-1">
+                    <span class="sr-only">Close</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="size-3" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+
+                <div class="p-6 ">
+                    <p class="text-lg">Berdasarkan Hasil Dari Diagnose Dari Beberapa Gejala Yang Dipilih Anda
+                        Menderita Penyakit :</p>
+                    <p class="font-medium text-gray-900"><?= $hasil ?></p>
+
+                    <p class="text-sm text-gray-500">
+                        Berikut Adalah Solusi:
+                        <br>
+                        <?= $solusi ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- Akhir Diagnosa Penyakit -->
+    </div>
+</body>
+
+</html>
